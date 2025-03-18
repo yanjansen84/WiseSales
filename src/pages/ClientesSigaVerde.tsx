@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { TreeDeciduous, Search, Plus, Edit, Trash2, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { useFocus } from "@/context/FocusContext";
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { getAuth } from "firebase/auth";
 
 interface Cliente {
   id: string;
@@ -27,7 +28,8 @@ const meses = [
 
 const ClientesSigaVerde = () => {
   const { toast } = useToast();
-  const auth = getAuth();
+  const { user } = useAuth();
+  const { userId } = useFocus();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState(meses[new Date().getMonth()]);
   const [novoCliente, setNovoCliente] = useState({ nome: "", cnpj: "" });
@@ -36,12 +38,12 @@ const ClientesSigaVerde = () => {
   const [clienteSelecionado, setClienteSelecionado] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
 
     const unsubscribe = onSnapshot(
       query(
         collection(db, "clientesSigaVerde"),
-        where("userId", "==", auth.currentUser.uid)
+        where("userId", "==", userId)
       ),
       (snapshot) => {
         const clientesData = snapshot.docs.map(doc => ({
@@ -53,7 +55,7 @@ const ClientesSigaVerde = () => {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [userId]);
 
   const formatarCNPJ = (cnpj: string) => {
     const cnpjLimpo = cnpj.replace(/\D/g, "");
@@ -65,7 +67,7 @@ const ClientesSigaVerde = () => {
   };
 
   const adicionarCliente = async () => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
     if (!novoCliente.nome.trim() || !novoCliente.cnpj.trim()) {
       toast({
         title: "Campos obrigatórios",
@@ -90,10 +92,10 @@ const ClientesSigaVerde = () => {
         nome: novoCliente.nome,
         cnpj: formatarCNPJ(cnpjLimpo),
         valorComprado: {},
-        userId: auth.currentUser.uid
+        userId: userId
       };
-      
-      console.log("Salvando cliente Siga Verde:", novoClienteData);
+
+      console.log("Salvando cliente:", novoClienteData);
       await addDoc(collection(db, "clientesSigaVerde"), novoClienteData);
 
       setNovoCliente({ nome: "", cnpj: "" });

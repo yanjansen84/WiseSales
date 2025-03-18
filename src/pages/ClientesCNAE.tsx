@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Building2, Search, Plus, Edit, Trash2, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { db, auth } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
+import { useFocus } from "@/context/FocusContext";
 
 interface Cliente {
   id: string;
@@ -26,6 +28,8 @@ const meses = [
 
 const ClientesCNAE = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { userId } = useFocus();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState(meses[new Date().getMonth()]);
   const [novoCliente, setNovoCliente] = useState({ nome: "", cnpj: "" });
@@ -34,12 +38,12 @@ const ClientesCNAE = () => {
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
 
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
 
     const unsubscribe = onSnapshot(
       query(
         collection(db, "clientesCNAE"),
-        where("userId", "==", auth.currentUser.uid)
+        where("userId", "==", userId)
       ),
       (snapshot) => {
         const clientesData = snapshot.docs.map(doc => ({
@@ -51,7 +55,7 @@ const ClientesCNAE = () => {
     );
 
     return () => unsubscribe();
-  }, [auth.currentUser]);
+  }, [userId]);
 
   const formatarCNPJ = (cnpj: string) => {
     const cnpjLimpo = cnpj.replace(/\D/g, "");
@@ -63,7 +67,7 @@ const ClientesCNAE = () => {
   };
 
   const adicionarCliente = async () => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
     if (!novoCliente.nome.trim() || !novoCliente.cnpj.trim()) {
       toast({
         title: "Campos obrigatórios",
@@ -88,7 +92,7 @@ const ClientesCNAE = () => {
         nome: novoCliente.nome,
         cnpj: formatarCNPJ(cnpjLimpo),
         valorComprado: {},
-        userId: auth.currentUser.uid
+        userId: userId
       };
 
       console.log("Salvando cliente:", novoClienteData);

@@ -34,63 +34,68 @@ const Sidebar = () => {
 
   if (!user) return null;
 
-  // Função para verificar se o usuário é do tipo "Foco da Unidade"
+  // Funções de verificação de acesso
   const isFocoUnidade = () => user?.role === "Foco da Unidade";
+  const isExecutivoVendas = () => user?.role === "Executivo de Vendas";
+  const isAdministrador = () => user?.role === "Administrador";
+  
+  // Função para verificar se o usuário pode ver páginas de visualização
+  const canViewPages = () => isFocoUnidade() || isExecutivoVendas() || isAdministrador();
 
   const sidebarItems: SidebarItem[] = [
     {
       name: "Dashboard",
       href: "/dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
-      canAccess: canAccessDashboard
+      canAccess: () => isFocoUnidade() || isExecutivoVendas()
     }, 
     {
       name: "Segmentos",
       href: "/segmentos",
       icon: <Layers className="h-5 w-5" />,
-      canAccess: isFocoUnidade
+      canAccess: () => isFocoUnidade()
     },
     {
       name: "Vendas/Realizado",
       href: "/vendas-realizado",
       icon: <DollarSign className="h-5 w-5" />,
-      canAccess: isFocoUnidade
+      canAccess: () => isFocoUnidade() || isExecutivoVendas()
     },
     {
       name: "Clientes CNAE",
       href: "/clientes-cnae",
       icon: <Building2 className="h-5 w-5" />,
-      canAccess: isFocoUnidade
+      canAccess: () => isFocoUnidade() || isExecutivoVendas()
     },
     {
       name: "Clientes Siga Verde",
       href: "/clientes-siga-verde",
       icon: <TreeDeciduous className="h-5 w-5" />,
-      canAccess: isFocoUnidade
+      canAccess: () => isFocoUnidade() || isExecutivoVendas()
     },
     {
       name: "Projetos",
       href: "/projetos",
       icon: <FolderKanban className="h-5 w-5" />,
-      canAccess: isFocoUnidade
+      canAccess: () => isFocoUnidade() || isExecutivoVendas()
     },
     {
       name: "Controle de Clientes",
       href: "/controle-clientes",
       icon: <Users className="h-5 w-5" />,
-      canAccess: isFocoUnidade
+      canAccess: () => isFocoUnidade() || isExecutivoVendas()
     },
     {
       name: "Usuários",
       href: "/users",
       icon: <Users className="h-5 w-5" />,
-      canAccess: canAccessUsers
+      canAccess: () => isAdministrador()
     },
     {
       name: "Configurações",
       href: "/configuracoes",
       icon: <Settings className="h-5 w-5" />,
-      canAccess: () => true // Todos os usuários têm acesso
+      canAccess: canViewPages // Todos os usuários têm acesso
     }
   ];
 

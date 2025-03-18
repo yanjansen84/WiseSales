@@ -34,6 +34,9 @@ import { cn } from "@/lib/utils";
 import { onSnapshot, query, collection, where, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
+import { useFocus } from "@/context/FocusContext";
+import { UserRole } from "@/types/user";
 
 // Interface for segment type
 interface Segmento {
@@ -58,6 +61,8 @@ const semanasMes = ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"];
 
 const VendasRealizado = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { userId } = useFocus();
   const [segmentos, setSegmentos] = useState<Segmento[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState<string>(format(new Date(), 'MMMM', { locale: ptBR }));
   const [editando, setEditando] = useState<boolean>(false);
@@ -65,10 +70,10 @@ const VendasRealizado = () => {
   
   // Buscar segmentos do Firebase
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
 
     const unsubscribe = onSnapshot(
-      query(collection(db, "segmentos"), where("userId", "==", auth.currentUser.uid)),
+      query(collection(db, "segmentos"), where("userId", "==", userId)),
       (snapshot) => {
         const segmentosData = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -81,7 +86,7 @@ const VendasRealizado = () => {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [userId]);
 
   // Filtrar segmentos pelo mês selecionado
   const segmentosFiltrados = segmentos.filter(segmento => 
@@ -280,6 +285,8 @@ const VendasRealizado = () => {
     }
   };
 
+  const canEdit = user?.role !== UserRole.SALES_EXECUTIVE;
+
   return (
     <AppLayout requiredAccess={() => true}>
       <div className="container mx-auto p-6">
@@ -309,12 +316,13 @@ const VendasRealizado = () => {
                 </Select>
               </div>
               
-              {!editando ? (
+              {canEdit && !editando && (
                 <Button onClick={() => setEditando(true)} variant="outline" className="bg-white">
                   <Plus className="mr-2 h-4 w-4 text-green-600" />
                   Adicionar Vendas
                 </Button>
-              ) : (
+              )}
+              {editando && canEdit && (
                 <Button onClick={salvarValores} className="bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800">
                   <Save className="mr-2 h-4 w-4" />
                   Salvar Valores
@@ -357,7 +365,7 @@ const VendasRealizado = () => {
                           
                           {semanasMes.map(semana => (
                             <TableCell key={semana}>
-                              {editando ? (
+                              {editando && canEdit ? (
                                 <Input
                                   type="text"
                                   value={valoresBrutos[segmento.id]?.[semana] || valoresSemana[segmento.id]?.[semana] || ''}

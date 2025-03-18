@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useFocus } from "@/context/FocusContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,8 @@ const meses = [
 
 const ControleClientes = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { userId } = useFocus();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState(meses[new Date().getMonth()]);
   const [tipoSelecionado, setTipoSelecionado] = useState<"top" | "novo" | "churn">("top");
@@ -36,12 +40,12 @@ const ControleClientes = () => {
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
 
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
 
     const unsubscribe = onSnapshot(
       query(
         collection(db, "controleClientes"),
-        where("userId", "==", auth.currentUser.uid),
+        where("userId", "==", userId),
         where("mes", "==", mesSelecionado)
       ),
       (snapshot) => {
@@ -54,7 +58,7 @@ const ControleClientes = () => {
     );
 
     return () => unsubscribe();
-  }, [auth.currentUser, mesSelecionado]);
+  }, [userId, mesSelecionado]);
 
   const formatarCNPJ = (cnpj: string) => {
     const cnpjLimpo = cnpj.replace(/\D/g, "");
@@ -115,7 +119,7 @@ const ControleClientes = () => {
   };
 
   const adicionarCliente = async () => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
     if (!novoCliente.nome.trim() || !novoCliente.cnpj.trim()) {
       toast({
         title: "Campos obrigatórios",
@@ -154,7 +158,7 @@ const ControleClientes = () => {
         valor: valorNumerico,
         tipo: tipoSelecionado,
         mes: mesSelecionado,
-        userId: auth.currentUser.uid
+        userId: userId
       };
 
       await addDoc(collection(db, "controleClientes"), novoClienteData);
