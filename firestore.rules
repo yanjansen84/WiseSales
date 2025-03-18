@@ -1,0 +1,72 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Função auxiliar para verificar se o usuário está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Função auxiliar para verificar se o usuário está acessando seus próprios dados
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Função para verificar se o usuário é um Executivo
+    function isExecutivo() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Executivo de Vendas";
+    }
+
+    // Função para verificar se o usuário é um Foco da Unidade
+    function isFocoDaUnidade() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Foco da Unidade";
+    }
+
+    // Função para verificar se o usuário é um Administrador
+    function isAdministrador() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Administrador";
+    }
+
+    // Função para verificar se o usuário é um Foco associado ao Executivo
+    function isFocoAssociado(userId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(userId));
+      return isExecutivo() && userDoc.data.associatedExecutiveId == request.auth.uid;
+    }
+
+    // Regras para a coleção users
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isUser(userId) || isAdministrador();
+    }
+
+    // Regras para projetos
+    match /projetos/{projetoId} {
+      allow read, write: if isFocoDaUnidade() || isExecutivo() || isAdministrador();
+    }
+
+    // Regras para segmentos
+    match /segmentos/{segmentoId} {
+      allow read, write: if isFocoDaUnidade() || isExecutivo() || isAdministrador();
+    }
+
+    // Regras para clientesCNAE
+    match /clientesCNAE/{clienteId} {
+      allow read, write: if isFocoDaUnidade() || isExecutivo() || isAdministrador();
+    }
+
+    // Regras para clientesSigaVerde
+    match /clientesSigaVerde/{docId} {
+      allow read, write: if isFocoDaUnidade() || isExecutivo() || isAdministrador();
+    }
+
+    // Regras para controleClientes
+    match /controleClientes/{docId} {
+      allow read, write: if isFocoDaUnidade() || isExecutivo() || isAdministrador();
+    }
+
+    // Regras para vendas realizadas
+    match /vendasRealizadas/{docId} {
+      allow read, write: if isFocoDaUnidade() || isExecutivo() || isAdministrador();
+    }
+  }
+}
