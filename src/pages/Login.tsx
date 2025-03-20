@@ -53,16 +53,16 @@ const Login = () => {
             </p>
             <div className="grid grid-cols-1 gap-5 mt-10">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 transition-all duration-300 hover:bg-white/15">
-                <h3 className="font-semibold text-lg mb-2">Dashboard Intuitivo</h3>
-                <p className="text-white/80">Visualize todos os dados importantes em um só lugar.</p>
+                <h3 className="font-semibold text-lg mb-2">Visão Estratégica</h3>
+                <p className="text-white/80">Acompanhe em tempo real metas, campanhas e resultados de vendas.</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 transition-all duration-300 hover:bg-white/15">
-                <h3 className="font-semibold text-lg mb-2">Controle de Acesso</h3>
-                <p className="text-white/80">Diferentes níveis de permissão para sua equipe.</p>
+                <h3 className="font-semibold text-lg mb-2">Gestão de Desempenho</h3>
+                <p className="text-white/80">Monitore as vendas, clientes inativos, e as principais oportunidades de crescimento.</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 transition-all duration-300 hover:bg-white/15">
-                <h3 className="font-semibold text-lg mb-2">Análise de Dados</h3>
-                <p className="text-white/80">Insights importantes para decisões estratégicas.</p>
+                <h3 className="font-semibold text-lg mb-2">Insights Inteligentes</h3>
+                <p className="text-white/80">Tome decisões estratégicas com base em dados detalhados e análises precisas.</p>
               </div>
             </div>
           </div>
@@ -82,24 +82,6 @@ const Login = () => {
             </div>
             
             <LoginForm />
-            
-            <div className="mt-10 text-center text-sm">
-              <p className="text-gray-600 mb-4">Contas de demonstração:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="text-sm p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 hover:border-green-200 transition-colors">
-                  admin@wisesales.com
-                </div>
-                <div className="text-sm p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 hover:border-green-200 transition-colors">
-                  executive@wisesales.com
-                </div>
-                <div className="text-sm p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 hover:border-green-200 transition-colors">
-                  focus@wisesales.com
-                </div>
-                <div className="text-sm p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 hover:border-green-200 transition-colors">
-                  Senha: qualquer texto
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
