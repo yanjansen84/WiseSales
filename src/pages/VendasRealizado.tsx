@@ -37,6 +37,7 @@ import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useFocus } from "@/context/FocusContext";
 import { UserRole } from "@/types/user";
+import { FocusSelector } from "@/components/FocusSelector";
 
 // Interface for segment type
 interface Segmento {
@@ -290,139 +291,127 @@ const VendasRealizado = () => {
   return (
     <AppLayout requiredAccess={() => true}>
       <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Vendas / Realizado</h1>
-        
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Registro de Vendas</CardTitle>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5 text-gray-500" />
-                <Select
-                  value={mesSelecionado}
-                  onValueChange={value => {
-                    setMesSelecionado(value);
-                    setEditando(false);
-                  }}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selecione o mês" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mesesDoAno.map(mes => (
-                      <SelectItem key={mes} value={mes}>{mes}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {canEdit && !editando && (
-                <Button onClick={() => setEditando(true)} variant="outline" className="bg-white">
-                  <Plus className="mr-2 h-4 w-4 text-green-600" />
-                  Adicionar Vendas
-                </Button>
-              )}
-              {editando && canEdit && (
-                <Button onClick={salvarValores} className="bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800">
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvar Valores
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {segmentosFiltrados.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <BarChart3 className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-                <p>Nenhum segmento cadastrado para o mês de {mesSelecionado}.</p>
-                <p className="text-sm mt-2">Adicione segmentos na página de Segmentos primeiro.</p>
-              </div>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Segmento</TableHead>
-                      <TableHead>Meta</TableHead>
-                      {semanasMes.map(semana => (
-                        <TableHead key={semana}>{semana}</TableHead>
-                      ))}
-                      <TableHead>Total Realizado</TableHead>
-                      <TableHead>% Alcançado</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {segmentosFiltrados.map(segmento => {
-                      const totalRealizado = segmento.realizado?.[mesSelecionado] || 0;
-                      const percentAlcancado = ((totalRealizado / 100) / segmento.meta) * 100;
-                      
-                      return (
-                        <TableRow key={segmento.id}>
-                          <TableCell className="font-medium">{segmento.nome}</TableCell>
-                          <TableCell>
-                            {formatarValor(segmento.meta)}
-                          </TableCell>
-                          
-                          {semanasMes.map(semana => (
-                            <TableCell key={semana}>
-                              {editando && canEdit ? (
-                                <Input
-                                  type="text"
-                                  value={valoresBrutos[segmento.id]?.[semana] || valoresSemana[segmento.id]?.[semana] || ''}
-                                  onChange={(e) => handleValorChange(segmento.id, semana, e.target.value)}
-                                  onBlur={() => handleBlur(segmento.id, semana)}
-                                  className="w-32"
-                                  placeholder="0,00"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      handleBlur(segmento.id, semana);
-                                      salvarValores();
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <span className="font-medium text-gray-700">
-                                  {segmento.semanas?.[mesSelecionado]?.[semana] 
-                                    ? formatarValor(segmento.semanas[mesSelecionado][semana], true)
-                                    : "R$ 0,00"}
-                                </span>
-                              )}
-                            </TableCell>
-                          ))}
-                          
-                          <TableCell className="font-semibold">
-                            {formatarValor(totalRealizado, true)}
-                          </TableCell>
-                          
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                <span>
-                                  {percentAlcancado.toFixed(1)}%
-                                </span>
-                              </div>
-                              <Progress 
-                                value={percentAlcancado} 
-                                className="h-2"
-                                indicatorClassName={cn(
-                                  percentAlcancado >= 100 
-                                    ? "bg-gradient-to-r from-green-500 to-emerald-600" 
-                                    : percentAlcancado >= 70
-                                      ? "bg-gradient-to-r from-yellow-500 to-amber-600"
-                                      : "bg-gradient-to-r from-red-500 to-rose-600"
-                                )}
-                              />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Vendas Realizadas</h1>
+          <div className="flex items-center gap-4">
+            <FocusSelector />
+            <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {mesesDoAno.map((mes) => (
+                  <SelectItem key={mes} value={mes}>
+                    {mes}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {canEdit && !editando && (
+              <Button onClick={() => setEditando(true)} variant="outline" className="bg-white">
+                <Plus className="mr-2 h-4 w-4 text-green-600" />
+                Adicionar Vendas
+              </Button>
             )}
-          </CardContent>
-        </Card>
+            {editando && canEdit && (
+              <Button onClick={salvarValores} className="bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800">
+                <Save className="mr-2 h-4 w-4" />
+                Salvar Valores
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {segmentosFiltrados.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <BarChart3 className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+            <p>Nenhum segmento cadastrado para o mês de {mesSelecionado}.</p>
+            <p className="text-sm mt-2">Adicione segmentos na página de Segmentos primeiro.</p>
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Segmento</TableHead>
+                  <TableHead>Meta</TableHead>
+                  {semanasMes.map(semana => (
+                    <TableHead key={semana}>{semana}</TableHead>
+                  ))}
+                  <TableHead>Total Realizado</TableHead>
+                  <TableHead>% Alcançado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {segmentosFiltrados.map(segmento => {
+                  const totalRealizado = segmento.realizado?.[mesSelecionado] || 0;
+                  const percentAlcancado = ((totalRealizado / 100) / segmento.meta) * 100;
+                  
+                  return (
+                    <TableRow key={segmento.id}>
+                      <TableCell className="font-medium">{segmento.nome}</TableCell>
+                      <TableCell>
+                        {formatarValor(segmento.meta)}
+                      </TableCell>
+                      
+                      {semanasMes.map(semana => (
+                        <TableCell key={semana}>
+                          {editando && canEdit ? (
+                            <Input
+                              type="text"
+                              value={valoresBrutos[segmento.id]?.[semana] || valoresSemana[segmento.id]?.[semana] || ''}
+                              onChange={(e) => handleValorChange(segmento.id, semana, e.target.value)}
+                              onBlur={() => handleBlur(segmento.id, semana)}
+                              className="w-32"
+                              placeholder="0,00"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleBlur(segmento.id, semana);
+                                  salvarValores();
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="font-medium text-gray-700">
+                              {segmento.semanas?.[mesSelecionado]?.[semana] 
+                                ? formatarValor(segmento.semanas[mesSelecionado][semana], true)
+                                : "R$ 0,00"}
+                            </span>
+                          )}
+                        </TableCell>
+                      ))}
+                      
+                      <TableCell className="font-semibold">
+                        {formatarValor(totalRealizado, true)}
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>
+                              {percentAlcancado.toFixed(1)}%
+                            </span>
+                          </div>
+                          <Progress 
+                            value={percentAlcancado} 
+                            className="h-2"
+                            indicatorClassName={cn(
+                              percentAlcancado >= 100 
+                                ? "bg-gradient-to-r from-green-500 to-emerald-600" 
+                                : percentAlcancado >= 70
+                                  ? "bg-gradient-to-r from-yellow-500 to-amber-600"
+                                  : "bg-gradient-to-r from-red-500 to-rose-600"
+                            )}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
         
         <Card>
           <CardHeader>

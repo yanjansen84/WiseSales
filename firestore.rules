@@ -68,5 +68,11 @@ service cloud.firestore {
     match /vendasRealizadas/{docId} {
       allow read, write: if isFocoDaUnidade() || isExecutivo() || isAdministrador();
     }
+
+    // Regras para pagamentos
+    match /payments/{paymentId} {
+      allow read: if isUser(paymentId);
+      allow write: if false; // Apenas o backend pode escrever
+    }
   }
 }

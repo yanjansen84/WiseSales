@@ -115,6 +115,37 @@ class MercadoPagoService {
   getPublicKey(): string {
     return this.config.publicKey;
   }
+
+  async createPreference(preference: any) {
+    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${this.config.accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(preference)
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao criar preferência no Mercado Pago');
+    }
+
+    return response.json();
+  }
+
+  async getPayment(paymentId: string) {
+    const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: {
+        "Authorization": `Bearer ${this.config.accessToken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao buscar pagamento no Mercado Pago');
+    }
+
+    return response.json();
+  }
 }
 
 export const mercadoPagoService = new MercadoPagoService();

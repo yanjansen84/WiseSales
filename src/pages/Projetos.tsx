@@ -8,9 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { FolderKanban, Plus, Edit, Trash2, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { getAuth } from "firebase/auth";
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
+import { useFocus } from "@/context/FocusContext";
+import { UserRole } from "@/types/user";
+import { FocusSelector } from "@/components/FocusSelector";
 
 interface Projeto {
   id: string;
@@ -27,7 +30,9 @@ const meses = [
 
 const Projetos = () => {
   const { toast } = useToast();
-  const auth = getAuth();
+  const { user } = useAuth();
+  const { userId } = useFocus();
+  const isExecutive = user?.role === UserRole.SALES_EXECUTIVE;
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState(meses[new Date().getMonth()]);
   const [novoProjeto, setNovoProjeto] = useState({ nome: "", cnpj: "", valor: "" });
@@ -35,12 +40,12 @@ const Projetos = () => {
 
   // Carregar projetos do Firestore
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
 
     const unsubscribe = onSnapshot(
       query(
         collection(db, "projetos"),
-        where("userId", "==", auth.currentUser.uid)
+        where("userId", "==", userId)
       ),
       (snapshot) => {
         const projetosData = snapshot.docs.map(doc => ({
@@ -52,7 +57,7 @@ const Projetos = () => {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [userId]);
 
   // Formatar CNPJ (XX.XXX.XXX/0001-XX)
   const formatarCNPJ = (cnpj: string) => {
@@ -67,7 +72,7 @@ const Projetos = () => {
 
   // Adicionar novo projeto
   const adicionarProjeto = async () => {
-    if (!auth.currentUser) return;
+    if (!userId) return;
     if (!novoProjeto.nome.trim() || !novoProjeto.cnpj.trim() || !novoProjeto.valor) {
       toast({
         title: "Campos obrigatórios",
@@ -103,7 +108,7 @@ const Projetos = () => {
         cnpj: formatarCNPJ(cnpjLimpo),
         valor: valorNumerico,
         mes: mesSelecionado,
-        userId: auth.currentUser.uid
+        userId: userId
       };
       
       console.log("Salvando projeto:", novoProjetoData);
@@ -211,85 +216,87 @@ const Projetos = () => {
   return (
     <AppLayout requiredAccess={() => true}>
       <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Projetos</h1>
-        
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Projetos</h1>
+          <div className="flex items-center gap-4">
+            <FocusSelector />
+            <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {meses.map((mes) => (
+                  <SelectItem key={mes} value={mes}>
+                    {mes}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Formulário de cadastro/edição */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>
-              {projetoEditando ? "Editar Projeto" : "Cadastrar Novo Projeto"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="nome">Nome do Cliente</Label>
-                <Input
-                  id="nome"
-                  placeholder="Nome do cliente"
-                  value={novoProjeto.nome}
-                  onChange={(e) => setNovoProjeto({ ...novoProjeto, nome: e.target.value })}
-                />
+        {!isExecutive && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>
+                {projetoEditando ? "Editar Projeto" : "Cadastrar Novo Projeto"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="nome">Nome do Cliente</Label>
+                  <Input
+                    id="nome"
+                    placeholder="Nome do cliente"
+                    value={novoProjeto.nome}
+                    onChange={(e) => setNovoProjeto({ ...novoProjeto, nome: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <Input
+                    id="cnpj"
+                    placeholder="XX.XXX.XXX/0001-XX"
+                    value={novoProjeto.cnpj}
+                    onChange={(e) => {
+                      const cnpj = e.target.value.replace(/\D/g, "").substring(0, 14);
+                      setNovoProjeto({ ...novoProjeto, cnpj: formatarCNPJ(cnpj) });
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="valor">Valor do Projeto</Label>
+                  <Input
+                    id="valor"
+                    placeholder="R$ 0,00"
+                    value={novoProjeto.valor}
+                    onChange={(e) => handleValorChange(e.target.value)}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="cnpj">CNPJ</Label>
-                <Input
-                  id="cnpj"
-                  placeholder="XX.XXX.XXX/0001-XX"
-                  value={novoProjeto.cnpj}
-                  onChange={(e) => {
-                    const cnpj = e.target.value.replace(/\D/g, "").substring(0, 14);
-                    setNovoProjeto({ ...novoProjeto, cnpj: formatarCNPJ(cnpj) });
-                  }}
-                />
+              <div className="flex justify-end mt-4 gap-2">
+                {projetoEditando ? (
+                  <>
+                    <Button variant="outline" onClick={cancelarEdicao}>Cancelar</Button>
+                    <Button onClick={salvarEdicao}>Salvar Alterações</Button>
+                  </>
+                ) : (
+                  <Button onClick={adicionarProjeto}>
+                    <Plus className="mr-1" size={16} />
+                    Adicionar Projeto
+                  </Button>
+                )}
               </div>
-              <div>
-                <Label htmlFor="valor">Valor do Projeto</Label>
-                <Input
-                  id="valor"
-                  placeholder="R$ 0,00"
-                  value={novoProjeto.valor}
-                  onChange={(e) => handleValorChange(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end mt-4 gap-2">
-              {projetoEditando ? (
-                <>
-                  <Button variant="outline" onClick={cancelarEdicao}>Cancelar</Button>
-                  <Button onClick={salvarEdicao}>Salvar Alterações</Button>
-                </>
-              ) : (
-                <Button onClick={adicionarProjeto}>
-                  <Plus className="mr-1" size={16} />
-                  Adicionar Projeto
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Filtro de mês e tabela de projetos */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Lista de Projetos</CardTitle>
-            <div className="w-48">
-              <Select
-                value={mesSelecionado}
-                onValueChange={setMesSelecionado}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o mês" />
-                </SelectTrigger>
-                <SelectContent>
-                  {meses.map((mes) => (
-                    <SelectItem key={mes} value={mes}>
-                      {mes}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </CardHeader>
           <CardContent>
             {projetosFiltrados.length === 0 ? (
@@ -298,7 +305,7 @@ const Projetos = () => {
                   <FolderKanban className="h-8 w-8 text-green-600" />
                 </div>
                 <p className="text-gray-600 text-center max-w-md">
-                  Nenhum projeto cadastrado para {mesSelecionado}. Adicione seu primeiro projeto usando o formulário acima.
+                  Nenhum projeto cadastrado para {mesSelecionado}. {!isExecutive && "Adicione seu primeiro projeto usando o formulário acima."}
                 </p>
               </div>
             ) : (
@@ -309,7 +316,9 @@ const Projetos = () => {
                       <TableHead>Cliente</TableHead>
                       <TableHead>CNPJ</TableHead>
                       <TableHead className="text-right">Valor do Projeto</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      {!isExecutive && (
+                        <TableHead className="text-right">Ações</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -320,24 +329,26 @@ const Projetos = () => {
                         <TableCell className="text-right">
                           {formatarValor(projeto.valor)}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => editarProjeto(projeto)}
-                            >
-                              <Edit size={16} />
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => excluirProjeto(projeto.id)}
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          </div>
-                        </TableCell>
+                        {!isExecutive && (
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => editarProjeto(projeto)}
+                              >
+                                <Edit size={16} />
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => excluirProjeto(projeto.id)}
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

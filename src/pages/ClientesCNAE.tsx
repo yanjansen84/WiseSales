@@ -12,6 +12,8 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { useFocus } from "@/context/FocusContext";
+import { UserRole } from "@/types/user";
+import { FocusSelector } from "@/components/FocusSelector";
 
 interface Cliente {
   id: string;
@@ -30,6 +32,7 @@ const ClientesCNAE = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { userId } = useFocus();
+  const isExecutive = user?.role === UserRole.SALES_EXECUTIVE;
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState(meses[new Date().getMonth()]);
   const [novoCliente, setNovoCliente] = useState({ nome: "", cnpj: "" });
@@ -229,76 +232,78 @@ const ClientesCNAE = () => {
   return (
     <AppLayout requiredAccess={() => true}>
       <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Clientes CNAE</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Clientes CNAE</h1>
+          <div className="flex items-center gap-4">
+            <FocusSelector />
+            <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {meses.map((mes) => (
+                  <SelectItem key={mes} value={mes}>
+                    {mes}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         
         {/* Formulário de cadastro */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>
-              {clienteEditando ? "Editar Cliente" : "Cadastrar Novo Cliente"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  value={novoCliente.nome}
-                  onChange={(e) => setNovoCliente({ ...novoCliente, nome: e.target.value })}
-                  placeholder="Nome do cliente"
-                />
+        {!isExecutive && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>
+                {clienteEditando ? "Editar Cliente" : "Cadastrar Novo Cliente"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nome">Nome</Label>
+                  <Input
+                    id="nome"
+                    value={novoCliente.nome}
+                    onChange={(e) => setNovoCliente({ ...novoCliente, nome: e.target.value })}
+                    placeholder="Nome do cliente"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <Input
+                    id="cnpj"
+                    placeholder="XX.XXX.XXX/0001-XX"
+                    value={novoCliente.cnpj}
+                    onChange={(e) => {
+                      const cnpj = e.target.value.replace(/\D/g, "").substring(0, 14);
+                      setNovoCliente({ ...novoCliente, cnpj: formatarCNPJ(cnpj) });
+                    }}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="cnpj">CNPJ</Label>
-                <Input
-                  id="cnpj"
-                  placeholder="XX.XXX.XXX/0001-XX"
-                  value={novoCliente.cnpj}
-                  onChange={(e) => {
-                    const cnpj = e.target.value.replace(/\D/g, "").substring(0, 14);
-                    setNovoCliente({ ...novoCliente, cnpj: formatarCNPJ(cnpj) });
-                  }}
-                />
+              <div className="flex justify-end mt-4 gap-2">
+                {clienteEditando ? (
+                  <>
+                    <Button variant="outline" onClick={cancelarEdicao}>Cancelar</Button>
+                    <Button onClick={salvarEdicao}>Salvar Alterações</Button>
+                  </>
+                ) : (
+                  <Button onClick={adicionarCliente}>
+                    <Plus className="mr-1" size={16} />
+                    Adicionar Cliente
+                  </Button>
+                )}
               </div>
-            </div>
-            <div className="flex justify-end mt-4 gap-2">
-              {clienteEditando ? (
-                <>
-                  <Button variant="outline" onClick={cancelarEdicao}>Cancelar</Button>
-                  <Button onClick={salvarEdicao}>Salvar Alterações</Button>
-                </>
-              ) : (
-                <Button onClick={adicionarCliente}>
-                  <Plus className="mr-1" size={16} />
-                  Adicionar Cliente
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Filtro de mês e tabela de clientes */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Controle de Clientes</CardTitle>
-            <div className="w-48">
-              <Select
-                value={mesSelecionado}
-                onValueChange={setMesSelecionado}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o mês" />
-                </SelectTrigger>
-                <SelectContent>
-                  {meses.map((mes) => (
-                    <SelectItem key={mes} value={mes}>
-                      {mes}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </CardHeader>
           <CardContent>
             {clientes.length === 0 ? (
@@ -307,7 +312,7 @@ const ClientesCNAE = () => {
                   <Building2 className="h-8 w-8 text-green-600" />
                 </div>
                 <p className="text-gray-600 text-center max-w-md">
-                  Nenhum cliente cadastrado. Adicione seu primeiro cliente usando o formulário acima.
+                  Nenhum cliente cadastrado. {!isExecutive && "Adicione seu primeiro cliente usando o formulário acima."}
                 </p>
               </div>
             ) : (
@@ -318,7 +323,9 @@ const ClientesCNAE = () => {
                       <TableHead>Nome</TableHead>
                       <TableHead>CNPJ</TableHead>
                       <TableHead className="text-right">Valor Comprado ({mesSelecionado})</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      {!isExecutive && (
+                        <TableHead className="text-right">Ações</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -356,38 +363,42 @@ const ClientesCNAE = () => {
                                     ? formatarValor(cliente.valorComprado[mesSelecionado]) 
                                     : "R$ 0,00"}
                                 </span>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => prepararEditarValor(
-                                    cliente.id, 
-                                    cliente.valorComprado[mesSelecionado]
-                                  )}
-                                >
-                                  <Edit size={16} />
-                                </Button>
+                                {!isExecutive && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => prepararEditarValor(
+                                      cliente.id, 
+                                      cliente.valorComprado[mesSelecionado]
+                                    )}
+                                  >
+                                    <Edit size={16} />
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => editarCliente(cliente)}
-                            >
-                              <Edit size={16} />
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => excluirCliente(cliente.id)}
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          </div>
-                        </TableCell>
+                        {!isExecutive && (
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => editarCliente(cliente)}
+                              >
+                                <Edit size={16} />
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => excluirCliente(cliente.id)}
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useFocus } from "@/context/FocusContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +12,15 @@ import { DollarSign, TrendingUp, Building2, TreeDeciduous, Users, FolderKanban }
 import { collection, query, where, onSnapshot, getDocs } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { useNavigate } from "react-router-dom";
+import { FocusSelector } from "@/components/FocusSelector";
+
+interface Projeto {
+  id: string;
+  nome: string;
+  valor: number;
+  mes: string;
+  userId: string;
+}
 
 const meses = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -167,9 +177,8 @@ const ClientesCard = ({
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { userId } = useFocus();
   const [mesSelecionado, setMesSelecionado] = useState(mesAtual.toString());
-  const [focoSelecionado, setFocoSelecionado] = useState<string | null>(null);
-  const [listaFocos, setListaFocos] = useState<{ id: string; nome: string }[]>([]);
   const [evolucaoVendas, setEvolucaoVendas] = useState<any[]>([]);
   const [clientesCNAE, setClientesCNAE] = useState<any[]>([]);
   const [clientesSigaVerde, setClientesSigaVerde] = useState<any[]>([]);
@@ -181,45 +190,8 @@ const Dashboard = () => {
   const [clientesChurn, setClientesChurn] = useState<any[]>([]);
   const [totalProjetos, setTotalProjetos] = useState(0);
 
-  // Carregar lista de Focos se for Executivo
   useEffect(() => {
-    if (!user || user.role !== UserRole.SALES_EXECUTIVE || !user.uid) return;
-
-    const unsubscribe = onSnapshot(
-      query(
-        collection(db, "users"),
-        where("role", "==", UserRole.FOCUS_UNIT),
-        where("associatedExecutiveId", "==", user.uid)
-      ),
-      (snapshot) => {
-        const focosData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          nome: doc.data().nome || doc.data().email,
-          ...doc.data()
-        }));
-        setListaFocos(focosData);
-        if (focosData.length > 0 && !focoSelecionado) {
-          setFocoSelecionado(focosData[0].id);
-        }
-      }
-    );
-
-    return () => unsubscribe();
-  }, [user]);
-
-  useEffect(() => {
-    if (!auth.currentUser?.uid) return;
-
-    let userId: string = auth.currentUser.uid;
-
-    // Se for Foco da Unidade, usa o próprio ID
-    if (user?.role === UserRole.FOCUS_UNIT) {
-      userId = auth.currentUser.uid;
-    }
-    // Se for Executivo de Vendas, usa o ID do foco selecionado
-    else if (user?.role === UserRole.SALES_EXECUTIVE && focoSelecionado) {
-      userId = focoSelecionado;
-    }
+    if (!auth.currentUser?.uid || !userId) return;
 
     // Carregar dados dos Projetos (valores já estão em reais no banco)
     const unsubscribeProjetos = onSnapshot(
@@ -233,13 +205,13 @@ const Dashboard = () => {
           const projetos = snapshot.docs.map(doc => ({
             ...doc.data(),
             id: doc.id
-          }));
+          } as Projeto));
           
           const totalMesAtual = projetos.reduce((acc, projeto) => {
             return acc + Number(projeto.valor || 0);
           }, 0);
           
-          setTotalProjetos(totalMesAtual); // Valor já está em reais, não precisa dividir por 100
+          setTotalProjetos(totalMesAtual);
         } catch (error) {
           console.error("Erro ao processar dados dos projetos:", error);
           setTotalProjetos(0);
@@ -269,11 +241,6 @@ const Dashboard = () => {
           setClientesCNAE([]);
           setTicketMedioCNAE(0);
         }
-      },
-      (error) => {
-        console.error("Erro ao carregar clientes CNAE:", error);
-        setClientesCNAE([]);
-        setTicketMedioCNAE(0);
       }
     );
 
@@ -299,11 +266,6 @@ const Dashboard = () => {
           setClientesSigaVerde([]);
           setTicketMedioSigaVerde(0);
         }
-      },
-      (error) => {
-        console.error("Erro ao carregar clientes Siga Verde:", error);
-        setClientesSigaVerde([]);
-        setTicketMedioSigaVerde(0);
       }
     );
 
@@ -319,15 +281,11 @@ const Dashboard = () => {
           const totalMesAtual = segmentos.reduce((acc, segmento) => 
             acc + (segmento.realizado?.[meses[parseInt(mesSelecionado)]] || 0), 0
           );
-          setTotalVendas(totalMesAtual / 100); // Convertendo de centavos para reais
+          setTotalVendas(totalMesAtual / 100);
         } catch (error) {
           console.error("Erro ao processar dados das vendas:", error);
           setTotalVendas(0);
         }
-      },
-      (error) => {
-        console.error("Erro ao carregar vendas:", error);
-        setTotalVendas(0);
       }
     );
 
@@ -350,9 +308,6 @@ const Dashboard = () => {
         setTopClientes(clientes.filter(c => c.tipo === "top").sort((a, b) => b.valor - a.valor));
         setClientesNovos(clientes.filter(c => c.tipo === "novo"));
         setClientesChurn(clientes.filter(c => c.tipo === "churn"));
-      },
-      (error) => {
-        console.error("Erro ao carregar controle de clientes:", error);
       }
     );
 
@@ -373,7 +328,7 @@ const Dashboard = () => {
         return {
           mes: mes.substring(0, 3),
           valor: valorTotal / 100,
-          tendencia: 0 // Será calculado abaixo
+          tendencia: 0
         };
       });
 
@@ -401,40 +356,22 @@ const Dashboard = () => {
       unsubscribeVendas();
       unsubscribeControleClientes();
     };
-  }, [mesSelecionado, focoSelecionado, user]);
+  }, [userId, mesSelecionado]);
 
   return (
-    <AppLayout>
+    <AppLayout requiredAccess={() => true}>
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-            <p className="text-gray-600">Acompanhamento de vendas e clientes</p>
-          </div>
-          
-          <div className="flex gap-4">
-            {user?.role === UserRole.SALES_EXECUTIVE && (
-              <Select value={focoSelecionado || ""} onValueChange={setFocoSelecionado}>
-                <SelectTrigger className="w-60">
-                  <SelectValue placeholder="Selecione o Foco" />
-                </SelectTrigger>
-                <SelectContent>
-                  {listaFocos.map((foco) => (
-                    <SelectItem key={foco.id} value={foco.id}>
-                      {foco.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            
+          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <FocusSelector />
             <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Selecione o mês" />
               </SelectTrigger>
               <SelectContent>
                 {meses.map((mes, index) => (
-                  <SelectItem key={index} value={index.toString()}>
+                  <SelectItem key={mes} value={index.toString()}>
                     {mes}
                   </SelectItem>
                 ))}
