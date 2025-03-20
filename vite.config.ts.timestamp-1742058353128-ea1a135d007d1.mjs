@@ -3,7 +3,7 @@ import { defineConfig } from "file:///E:/User/Desktop/Wise%20Sales/node_modules/
 import react from "file:///E:/User/Desktop/Wise%20Sales/node_modules/@vitejs/plugin-react-swc/index.mjs";
 import path from "path";
 import { componentTagger } from "file:///E:/User/Desktop/Wise%20Sales/node_modules/lovable-tagger/dist/index.js";
-var __vite_injected_original_dirname = "E:\\User\\Desktop\\Wise Sales";
+var __vite_injected_original_dirname = "E:\\User\\Desktop\\Wise Expert";
 var vite_config_default = defineConfig(({ mode }) => ({
   server: {
     host: "::",

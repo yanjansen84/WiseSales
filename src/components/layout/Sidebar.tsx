@@ -103,10 +103,10 @@ const Sidebar = () => {
       <div className="p-6">
         <div className="flex items-center gap-2 mb-8">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center">
-            <span className="font-bold text-white">WS</span>
+            <span className="font-bold text-white">WE</span>
           </div>
           <h1 className="text-xl font-bold font-display bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent">
-            Wise Sales
+            Wise Expert
           </h1>
         </div>
         
@@ -132,7 +132,7 @@ const Sidebar = () => {
         </Button>
         
         <div className="mt-6 text-xs text-center text-gray-500">
-          <p>Wise Sales v1.0.0</p>
+          <p>Wise Expert v1.0.0</p>
           <p className="mt-1"> 2025 Todos os direitos reservados</p>
         </div>
       </div>

@@ -50,7 +50,7 @@ server.post('/api/payment/create-preference', async (req, res) => {
       items: [
         {
           id: '1',
-          title: 'Assinatura Wise Sales',
+          title: 'Assinatura Wise Expert',
           unit_price: Number(amount),
           quantity: 1,
           currency_id: 'BRL'

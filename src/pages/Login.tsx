@@ -12,11 +12,11 @@ const Login = () => {
     if (user && !isLoading) {
       // Redirecionamento baseado no papel do usuário
       if (user.role === "Foco da Unidade") {
-        navigate("/segmentos");
+        navigate("/dashboard");
       } else if (user.role === "Executivo de Vendas") {
         navigate("/dashboard");
       } else {
-        navigate("/dashboard");
+        navigate("/users");
       }
     }
   }, [user, isLoading, navigate]);
@@ -45,9 +45,9 @@ const Login = () => {
           
           <div className="max-w-md space-y-8 relative z-10">
             <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-8">
-              <div className="text-4xl font-bold">WS</div>
+              <div className="text-4xl font-bold">W</div>
             </div>
-            <h1 className="text-5xl font-bold font-display leading-tight">Wise Sales</h1>
+            <h1 className="text-5xl font-bold font-display leading-tight">Wise Expert</h1>
             <p className="text-white/90 text-xl">
               A plataforma completa para gerenciamento de dados e satisfação do seu cinema.
             </p>

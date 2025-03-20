@@ -25,7 +25,7 @@ const ForgotPassword = () => {
               <span className="font-bold text-white text-xl">WS</span>
             </div>
           </div>
-          <h1 className="text-3xl font-bold font-display mb-2 text-green-800">Wise Sales</h1>
+          <h1 className="text-3xl font-bold font-display mb-2 text-green-800">Wise Expert</h1>
           <p className="text-gray-600">Reset your password</p>
         </div>
         

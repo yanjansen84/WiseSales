@@ -32,7 +32,7 @@ const Index = () => {
             <span className="font-bold text-white text-xl">WS</span>
           </div>
           <h1 className="text-2xl font-bold font-display bg-gradient-to-r from-wise-600 to-wise-700 bg-clip-text text-transparent">
-            Wise Sales
+            Wise Expert
           </h1>
         </div>
         
@@ -57,7 +57,7 @@ const Index = () => {
               Gerencie seus cinemas com <span className="text-wise-600">inteligência</span> e <span className="text-wise-600">simplicidade</span>
             </h2>
             <p className="text-lg text-gray-600 mb-8">
-              O Wise Sales é a plataforma ideal para gerenciar os dados de venda e satisfação do seu cinema. 
+              O Wise Expert é a plataforma ideal para gerenciar os dados de venda e satisfação do seu cinema. 
               Com diferentes perfis e permissões, cada membro da equipe tem acesso exatamente ao que precisa.
             </p>
             
@@ -122,12 +122,12 @@ const Index = () => {
                 <span className="font-bold text-white text-sm">WS</span>
               </div>
               <h2 className="text-xl font-bold font-display text-wise-700">
-                Wise Sales
+                Wise Expert
               </h2>
             </div>
             
             <div className="text-center md:text-right text-gray-500 text-sm">
-              &copy; 2023 Wise Sales. Todos os direitos reservados.<br />
+              &copy; 2023 Wise Expert. Todos os direitos reservados.<br />
               Desenvolvido com cuidado para cinemas de todo o Brasil.
             </div>
           </div>

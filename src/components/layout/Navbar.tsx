@@ -44,9 +44,6 @@ const Navbar = () => {
     <header className="sticky top-0 z-40 w-full border-b bg-white/90 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
         <div className="flex items-center gap-2">
-          <div className="font-display text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent">
-            Wise Sales
-          </div>
           <div className={`text-xs px-3 py-1 rounded-full ${getRoleBadgeColor(user.role)}`}>
             {user.role}
           </div>
