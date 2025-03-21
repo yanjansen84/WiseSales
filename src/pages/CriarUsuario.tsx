@@ -14,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { initializeApp } from "firebase/app";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { db } from "@/lib/firebase";
 import { doc, setDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { User, UserRole } from "@/types/user";
 
@@ -76,9 +77,23 @@ const CriarUsuario = () => {
     setLoading(true);
 
     try {
+      // Criar uma nova instância do Firebase Auth apenas para criação do usuário
+      const firebaseConfig = {
+        apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId: import.meta.env.VITE_FIREBASE_APP_ID
+      };
+      
+      const tempApp = initializeApp(firebaseConfig, "tempAuth");
+      
+      const tempAuth = getAuth(tempApp);
+      
       // Criar usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
-        auth,
+        tempAuth,
         formData.email,
         formData.password
       );
