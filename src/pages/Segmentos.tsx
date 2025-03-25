@@ -6,10 +6,18 @@ import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot } from "fireb
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
-import { Plus, Edit, Trash } from "lucide-react";
+import { Plus, Edit, Trash, Check } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Form,
@@ -71,16 +79,6 @@ export default function Segmentos() {
   useEffect(() => {
     form.setValue("meses", selectedMonths);
   }, [selectedMonths]);
-
-  const toggleMonth = (mes: string) => {
-    setSelectedMonths(prev => {
-      if (prev.includes(mes)) {
-        return prev.filter(m => m !== mes);
-      } else {
-        return [...prev, mes];
-      }
-    });
-  };
 
   const onSubmit = async (data) => {
     try {
@@ -182,28 +180,48 @@ export default function Segmentos() {
               <FormField
                 control={form.control}
                 name="meses"
-                render={() => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-normal text-gray-700">Meses</FormLabel>
                     <FormControl>
-                      <div className="flex flex-wrap gap-2">
-                        {["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].map((mes) => (
-                          <Button
-                            key={mes}
-                            type="button"
-                            variant={selectedMonths.includes(mes) ? "default" : "outline"}
-                            onClick={() => toggleMonth(mes)}
-                            className={`h-8 px-3 py-1 text-sm font-normal ${
-                              selectedMonths.includes(mes)
-                                ? "bg-green-600 text-white hover:bg-green-700"
-                                : "text-gray-700 hover:bg-gray-50 border-gray-200"
-                            }`}
-                          >
-                            {mes}
-                          </Button>
-                        ))}
-                      </div>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange([...field.value, value]);
+                        }}
+                        value=""
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione os meses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+                              .filter(mes => !field.value.includes(mes))
+                              .map((mes) => (
+                                <SelectItem key={mes} value={mes}>
+                                  {mes}
+                                </SelectItem>
+                              ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {field.value.map((mes) => (
+                        <div key={mes} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full">
+                          <span className="text-sm">{mes}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              field.onChange(field.value.filter(m => m !== mes));
+                            }}
+                            className="text-gray-500 hover:text-red-500"
+                          >
+                            <Trash className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
