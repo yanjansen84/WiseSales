@@ -12,7 +12,8 @@ import { Payment } from "@/components/configuracoes/assinatura/Payment";
 
 const Configuracoes = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, updatePassword, isLoading: authLoading } = useAuth();
+  const [isUpdating, setIsUpdating] = useState(false);
   const [usuario, setUsuario] = useState({
     nome: "",
     email: "",
@@ -33,7 +34,7 @@ const Configuracoes = () => {
     });
   };
 
-  const handleAlterarSenha = () => {
+  const handleAlterarSenha = async () => {
     if (alterarSenha.novaSenha !== alterarSenha.confirmarSenha) {
       toast({
         title: "Erro",
@@ -43,11 +44,34 @@ const Configuracoes = () => {
       return;
     }
 
-    // Implementar lógica para alterar senha
-    toast({
-      title: "Senha alterada",
-      description: "Sua senha foi alterada com sucesso."
-    });
+    if (alterarSenha.novaSenha.length < 6) {
+      toast({
+        title: "Erro",
+        description: "A senha deve ter no mínimo 6 caracteres.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      await updatePassword(alterarSenha.senhaAtual, alterarSenha.novaSenha);
+      
+      setAlterarSenha({
+        senhaAtual: "",
+        novaSenha: "",
+        confirmarSenha: ""
+      });
+
+      toast({
+        title: "Sucesso",
+        description: "Senha alterada com sucesso!"
+      });
+    } catch (error) {
+      // O AuthContext já trata os erros e exibe toast
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -143,10 +167,15 @@ const Configuracoes = () => {
                     <Input
                       id="novaSenha"
                       type="password"
-                      placeholder="Digite a nova senha"
+                      placeholder="Digite a nova senha (mínimo 6 caracteres)"
                       value={alterarSenha.novaSenha}
                       onChange={(e) => setAlterarSenha({ ...alterarSenha, novaSenha: e.target.value })}
                     />
+                    {alterarSenha.novaSenha.length > 0 && alterarSenha.novaSenha.length < 6 && (
+                      <p className="text-sm text-destructive">
+                        A senha deve ter no mínimo 6 caracteres
+                      </p>
+                    )}
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="confirmarSenha">Confirmar Nova Senha</Label>
@@ -159,7 +188,12 @@ const Configuracoes = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={handleAlterarSenha}>Alterar Senha</Button>
+                <Button 
+                  onClick={handleAlterarSenha}
+                  disabled={isUpdating || authLoading}
+                >
+                  {isUpdating ? "Alterando..." : "Alterar Senha"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

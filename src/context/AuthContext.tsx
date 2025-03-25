@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  updatePassword as firebaseUpdatePassword,
 } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,6 +17,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   canAccessDashboard: () => boolean;
   canAccessUsers: () => boolean;
   canAccessPayment: () => boolean;
@@ -157,6 +159,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    try {
+      // Reautenticar o usuário
+      const credentials = await signInWithEmailAndPassword(
+        auth,
+        auth.currentUser.email,
+        currentPassword
+      );
+
+      // Atualizar senha
+      await firebaseUpdatePassword(credentials.user, newPassword);
+
+      toast({
+        description: "Senha alterada com sucesso!",
+      });
+    } catch (error: any) {
+      console.error("Error updating password:", error);
+      let errorMessage = "Erro ao alterar senha";
+      
+      if (error.code === "auth/wrong-password") {
+        errorMessage = "Senha atual incorreta";
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "A senha deve ter no mínimo 6 caracteres";
+      }
+
+      toast({
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const canAccessDashboard = () => {
     if (!user) return false;
     return user.role === UserRole.SALES_EXECUTIVE || user.role === UserRole.FOCUS_UNIT;
@@ -178,6 +217,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     login,
     logout,
     forgotPassword,
+    updatePassword,
     canAccessDashboard,
     canAccessUsers,
     canAccessPayment,
