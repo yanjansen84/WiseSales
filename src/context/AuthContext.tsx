@@ -18,6 +18,7 @@ interface AuthContextType {
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  updateProfile: (data: { nome: string; telefone?: string }) => Promise<void>;
   canAccessDashboard: () => boolean;
   canAccessUsers: () => boolean;
   canAccessPayment: () => boolean;
@@ -211,6 +212,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return user.role === UserRole.ADMINISTRATOR || user.role === UserRole.SALES_EXECUTIVE;
   };
 
+  const updateProfile = async (data: { nome: string; telefone?: string }) => {
+    if (!user) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Atualizar no Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, {
+        nome: data.nome,
+        telefone: data.telefone || null,
+        updatedAt: new Date().toISOString()
+      });
+
+      // Atualizar estado local
+      setUser({
+        ...user,
+        nome: data.nome,
+        telefone: data.telefone || null
+      });
+
+      toast({
+        description: "Perfil atualizado com sucesso!",
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        description: "Erro ao atualizar perfil",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     user,
     isLoading,
@@ -218,6 +257,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logout,
     forgotPassword,
     updatePassword,
+    updateProfile,
     canAccessDashboard,
     canAccessUsers,
     canAccessPayment,

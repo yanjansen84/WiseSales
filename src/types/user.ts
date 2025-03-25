@@ -6,13 +6,14 @@ export enum UserRole {
 
 export interface User {
   uid: string;
-  email: string;
+  email?: string;
   nome?: string;
   role: UserRole;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
   associatedExecutiveId?: string; // Para Foco da Unidade
+  telefone?: string;
 }
 
 export interface LoginCredentials {
