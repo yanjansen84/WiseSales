@@ -39,6 +39,7 @@ const ClientesCNAE = () => {
   const [valorComprado, setValorComprado] = useState<string>("");
   const [clienteSelecionado, setClienteSelecionado] = useState<string | null>(null);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
+  const [filtroValorPreenchido, setFiltroValorPreenchido] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -248,6 +249,13 @@ const ClientesCNAE = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Button 
+              variant={filtroValorPreenchido ? "default" : "outline"} 
+              onClick={() => setFiltroValorPreenchido(!filtroValorPreenchido)}
+            >
+              <Search className="mr-1" size={16} />
+              {filtroValorPreenchido ? "Mostrar todos" : "Filtrar com valor"}
+            </Button>
           </div>
         </div>
         
@@ -329,7 +337,12 @@ const ClientesCNAE = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {clientes.map((cliente) => (
+                    {clientes
+                      .filter(cliente => 
+                        !filtroValorPreenchido || 
+                        (cliente.valorComprado[mesSelecionado] && cliente.valorComprado[mesSelecionado] > 0)
+                      )
+                      .map((cliente) => (
                       <TableRow key={cliente.id}>
                         <TableCell className="font-medium">{cliente.nome}</TableCell>
                         <TableCell>{cliente.cnpj}</TableCell>
